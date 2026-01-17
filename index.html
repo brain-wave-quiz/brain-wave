@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Brain Wave Study Group Online Quiz</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f7fb; margin:0; }
+  .container { max-width: 1000px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.08); }
+  h1 { text-align: center; color: #1a73e8; }
+  .subjects { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px; }
+  .subject { padding: 15px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align:center; }
+  .subject.selected { background: #1a73e8; color: #fff; border-color:#1a73e8; }
+  .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; }
+  .btn-primary { background: #1a73e8; color: #fff; }
+  .btn-danger { background: #e53935; color: #fff; }
+  .hidden { display:none; }
+  .timer { font-size: 22px; font-weight: bold; margin: 10px 0; text-align:center; }
+  .question { margin: 20px 0; font-size: 18px; }
+  .options { display:grid; grid-template-columns: 1fr; gap:10px; }
+  .option { padding: 12px; border: 1px solid #ddd; border-radius: 8px; cursor:pointer; }
+  .option.selected { background:#1a73e8; color:#fff; }
+  .admin-panel { margin-top: 20px; }
+  .form-group { margin: 10px 0; }
+  input, select, textarea { width: 100%; padding: 10px; border-radius: 6px; border:1px solid #ddd; }
+  .channel { margin-top: 20px; padding: 15px; background: #e8f0fe; border-radius: 8px; text-align:center; }
+  .result { text-align:center; }
+  .table { width:100%; border-collapse: collapse; margin-top: 15px; }
+  .table th, .table td { border:1px solid #ddd; padding: 10px; text-align:left; }
+</style>
+</head>
+<body>
+
+<div class="container" id="home">
+  <h1>Brain Wave Study Group Online Quiz</h1>
+  <p style="text-align:center"><b>Select 3 subjects</b> (English is compulsory)</p>
+
+  <div class="subjects" id="subjectsList"></div>
+  <p id="selectedCount" style="text-align:center">Selected: 0/3</p>
+  <div style="text-align:center">
+    <button class="btn btn-primary" id="startQuizBtn">Start Quiz</button>
+    <button class="btn btn-danger" id="adminBtn">Admin Login</button>
+  </div>
+
+  <div class="channel">
+    <p><b>Join our WhatsApp Channel</b></p>
+    <a href="https://whatsapp.com/channel/0029VbBcevAK5cDIAnKPEx2C" target="_blank">
+      https://whatsapp.com/channel/0029VbBcevAK5cDIAnKPEx2C
+    </a>
+  </div>
+</div>
+
+<div class="container hidden" id="quiz">
+  <h1 id="quizTitle">Subject Quiz</h1>
+  <div class="timer" id="timer">30:00</div>
+  <div class="question" id="questionText"></div>
+  <div class="options" id="optionsList"></div>
+  <div style="text-align:center; margin-top:15px">
+    <button class="btn btn-primary" id="nextBtn">Next</button>
+  </div>
+</div>
+
+<div class="container hidden" id="result">
+  <h1>Quiz Result</h1>
+  <div id="resultDetails"></div>
+  <button class="btn btn-primary" onclick="location.reload()">Restart</button>
+</div>
+
+<div class="container hidden" id="admin">
+  <h1>Admin Panel</h1>
+  <div id="adminLogin">
+    <div class="form-group">
+      <input type="email" id="adminEmail" placeholder="Admin Email">
+    </div>
+    <div class="form-group">
+      <input type="password" id="adminPassword" placeholder="Password">
+    </div>
+    <button class="btn btn-primary" id="loginBtn">Login</button>
+  </div>
+
+  <div id="adminDashboard" class="hidden">
+    <button class="btn btn-danger" id="logoutBtn">Logout</button>
+    <div class="admin-panel">
+      <h3>Upload Questions</h3>
+      <div class="form-group">
+        <select id="subjectSelect">
+          <option value="">Select Subject</option>
+          <option>Mathematics</option>
+          <option>English</option>
+          <option>Physics</option>
+          <option>Chemistry</option>
+          <option>Biology</option>
+          <option>Economics</option>
+          <option>Commerce</option>
+          <option>Account</option>
+          <option>Literature</option>
+          <option>Government</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <textarea id="questionInput" placeholder="Question"></textarea>
+      </div>
+      <div class="form-group">
+        <input type="text" id="aInput" placeholder="Option A">
+      </div>
+      <div class="form-group">
+        <input type="text" id="bInput" placeholder="Option B">
+      </div>
+      <div class="form-group">
+        <input type="text" id="cInput" placeholder="Option C">
+      </div>
+      <div class="form-group">
+        <input type="text" id="dInput" placeholder="Option D">
+      </div>
+      <div class="form-group">
+        <select id="correctInput">
+          <option value="">Correct Answer</option>
+          <option value="a">A</option>
+          <option value="b">B</option>
+          <option value="c">C</option>
+          <option value="d">D</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="uploadBtn">Upload Question</button>
+
+      <h3 style="margin-top:20px">Uploaded Questions</h3>
+      <table class="table" id="questionsTable">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Question</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBiVsH1O2XKZRWj72E8lQZx_q378kNzCGA",
+    authDomain: "brain-wave-quiz.firebaseapp.com",
+    projectId: "brain-wave-quiz",
+    storageBucket: "brain-wave-quiz.firebasestorage.app",
+    messagingSenderId: "415277678172",
+    appId: "1:415277678172:web:97ad987458aeed3b0cb099",
+    measurementId: "G-CBXEH8DGKX"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Subject List
+  const subjects = [
+    "Mathematics",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Economics",
+    "Commerce",
+    "Account",
+    "Literature",
+    "Government"
+  ];
+
+  const subjectsList = document.getElementById("subjectsList");
+  const selectedCount = document.getElementById("selectedCount");
+  let selectedSubjects = [];
+
+  subjects.forEach(sub => {
+    const div = document.createElement("div");
+    div.className = "subject";
+    div.innerText = sub;
+    div.onclick = () => toggleSubject(sub, div);
+    subjectsList.appendChild(div);
+  });
+
+  function toggleSubject(subject, element) {
+    if (selectedSubjects.includes(subject)) {
+      selectedSubjects = selectedSubjects.filter(s => s !== subject);
+      element.classList.remove("selected");
+    } else {
+      if (selectedSubjects.length >= 3) return alert("You can only select 3 subjects.");
+      selectedSubjects.push(subject);
+      element.classList.add("selected");
+    }
+    selectedCount.innerText = `Selected: ${selectedSubjects.length}/3`;
+  }
+
+  // UI Elements
+  const home = document.getElementById("home");
+  const quiz = document.getElementById("quiz");
+  const result = document.getElementById("result");
+  const admin = document.getElementById("admin");
+
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  const adminBtn = document.getElementById("adminBtn");
+
+  const timerEl = document.getElementById("timer");
+  const questionText = document.getElementById("questionText");
+  const optionsList = document.getElementById("optionsList");
+  const nextBtn = document.getElementById("nextBtn");
+  const quizTitle = document.getElementById("quizTitle");
+
+  // Quiz Variables
+  let quizSubjects = [];
+  let currentSubjectIndex = 0;
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let timer;
+  let timeLeft = 1800;
+
+  let questionsBank = {};
+
+  // Load questions from Firebase
+  async function loadQuestions() {
+    const snapshot = await getDocs(collection(db, "questions"));
+    questionsBank = {};
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!questionsBank[data.subject]) questionsBank[data.subject] = [];
+      questionsBank[data.subject].push({
+        id: doc.id,
+        question: data.question,
+        a: data.a,
+        b: data.b,
+        c: data.c,
+        d: data.d,
+        correct: data.correct
+      });
+    });
+  }
+
+  // Start Quiz
+  startQuizBtn.onclick = async () => {
+    if (selectedSubjects.length !== 3) {
+      return alert("You must select exactly 3 subjects.");
+    }
+
+    await loadQuestions();
+
+    quizSubjects = ["English", ...selectedSubjects];
+    home.classList.add("hidden");
+    quiz.classList.remove("hidden");
+
+    startSubject();
+  };
+
+  function startSubject() {
+    currentQuestionIndex = 0;
+    timeLeft = 1800;
+
+    quizTitle.innerText = `Subject: ${quizSubjects[currentSubjectIndex]}`;
+    loadQuestion();
+
+    timer = setInterval(() => {
+      timeLeft--;
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      timerEl.innerText = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        nextSubject();
+      }
+    }, 1000);
+  }
+
+  function loadQuestion() {
+    const subject = quizSubjects[currentSubjectIndex];
+    const questions = questionsBank[subject] || [];
+    if (questions.length === 0) {
+      nextSubject();
+      return;
+    }
+
+    const q = questions[currentQuestionIndex];
+    if (!q) {
+      nextSubject();
+      return;
+    }
+
+    questionText.innerText = q.question;
+    optionsList.innerHTML = "";
+
+    ["a","b","c","d"].forEach(opt => {
+      const div = document.createElement("div");
+      div.className = "option";
+      div.innerText = `${opt.toUpperCase()}: ${q[opt]}`;
+      div.onclick = () => selectOption(div, opt);
+      optionsList.appendChild(div);
+    });
+  }
+
+  let selectedOption = null;
+
+  function selectOption(element, option) {
+    selectedOption = option;
+    document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+    element.classList.add("selected");
+  }
+
+  nextBtn.onclick = () => {
+    const subject = quizSubjects[currentSubjectIndex];
+    const questions = questionsBank[subject] || [];
+    const q = questions[currentQuestionIndex];
+
+    if (selectedOption && q.correct === selectedOption) score++;
+
+    selectedOption = null;
+    currentQuestionIndex++;
+    loadQuestion();
+  };
+
+  function nextSubject() {
+    clearInterval(timer);
+
+    currentSubjectIndex++;
+    if (currentSubjectIndex >= quizSubjects.length) {
+      finishQuiz();
+      return;
+    }
+    startSubject();
+  }
+
+  function finishQuiz() {
+    quiz.classList.add("hidden");
+    result.classList.remove("hidden");
+
+    const total = score;
+    const outOf = 400;
+    const percentage = (total / (quizSubjects.length * 50)) * 100;
+
+    document.getElementById("resultDetails").innerHTML = `
+      <p><b>Total Score:</b> ${total} / ${outOf}</p>
+      <p><b>Percentage:</b> ${percentage.toFixed(2)}%</p>
+    `;
+  }
+
+  // Admin Section
+  adminBtn.onclick = () => {
+    home.classList.add("hidden");
+    admin.classList.remove("hidden");
+  };
+
+  const adminLogin = document.getElementById("adminLogin");
+  const adminDashboard = document.getElementById("adminDashboard");
+
+  const loginBtn = document.getElementById("loginBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  loginBtn.onclick = async () => {
+    const email = document.getElementById("adminEmail").value;
+    const pass = document.getElementById("adminPassword").value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      adminLogin.classList.add("hidden");
+      adminDashboard.classList.remove("hidden");
+      loadAdminQuestions();
+    } catch (e) {
+      alert("Login failed: " + e.message);
+    }
+  };
+
+  logoutBtn.onclick = () => {
+    signOut(auth);
+    adminDashboard.classList.add("hidden");
+    adminLogin.classList.remove("hidden");
+  };
+
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      adminDashboard.classList.add("hidden");
+      adminLogin.classList.remove("hidden");
+    }
+  });
+
+  // Upload Question
+  document.getElementById("uploadBtn").onclick = async () => {
+    const subject = document.getElementById("subjectSelect").value;
+    const question = document.getElementById("questionInput").value;
+    const a = document.getElementById("aInput").value;
+    const b = document.getElementById("bInput").value;
+    const c = document.getElementById("cInput").value;
+    const d = document.getElementById("dInput").value;
+    const correct = document.getElementById("correctInput").value;
+
+    if (!subject || !question || !a || !b || !c || !d || !correct) {
+      return alert("All fields are required");
+    }
+
+    await addDoc(collection(db, "questions"), {
+      subject,
+      question,
+      a, b, c, d,
+      correct
+    });
+
+    alert("Question uploaded successfully");
+    loadAdminQuestions();
+  };
+
+  // Load admin questions
+  async function loadAdminQuestions() {
+    const snapshot = await getDocs(collection(db, "questions"));
+    const tbody = document.querySelector("#questionsTable tbody");
+    tbody.innerHTML = "";
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${data.subject}</td>
+        <td>${data.question}</td>
+        <td><button class="btn btn-danger" onclick="deleteQuestion('${doc.id}')">Delete</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.deleteQuestion = async (id) => {
+    await deleteDoc(doc(db, "questions", id));
+    loadAdminQuestions();
+  };
+
+</script>
+</body>
+</html>
